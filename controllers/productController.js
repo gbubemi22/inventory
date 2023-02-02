@@ -1,131 +1,139 @@
-const Product = require("../models/ProductModel");
 const { StatusCodes } = require("http-status-codes");
+const Product = require("../models/ProductModel");
 
+// Create and Save a new Tutorial
+const create = (req, res) => {
+  // Validate request
+  if (!req.body) {
+    res.status(400).send({
+      message: "Content can not be empty!"
+    });
+  }
 
-const addProduct = async (req, res) => {
-     // const product_name = req.body.product_name;
-     // const product_line = req.body.product_line;
-     // const unit_price = req.body.unit_price;
+  // Create a Product
+  const product = new Product({
     
-     // const pack_price = req.body.pack_price;
-     // const batchId = req.body.batchId;
-     // const pack = req.body.pack;
 
-     const { 
-          product_name,
-           product_line,
-            unit_price,
-             pack_price, 
-             batchId, 
-             pack
-          } = req.body;
-     const product =  Product.create({
-         product_name,
-         product_line,
-         unit_price,
-     
-         pack_price,
-         batchId,
-         pack
+     product_name :req.body.product_name,
+       product_line :req.body.product_line,
+       unit_price : req.body.unit_price,
+    
+       pack_price: req.body.pack_price,
+      batchId : req.body.batchId,
+       pack :req.body.pack,
+  });
 
-     })
-
-    // product = await product.save();
+  // Save Tutorial in the database
+  Product.create(product, (err, data) => {
+    if (err)
+      res.status(500).send({
+        message:
+          err.message || "Some error occurred while creating the Product."
+      });
+    else res.status(StatusCodes.CONFLICT).json(data);
+  });
+};
 
 
-     res.status(StatusCodes.CREATED).json({
-          message: "Product added successfully",
-          product : product
-     })
-}
+// Retrieve all Product from the database (with condition).
+const findAll = (req, res) => {
+     const product_name = req.query.product_name;
+   
+     Product.getAll(product_name, (err, data) => {
+       if (err)
+         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+           message:
+             err.message || "Some error occurred while retrieving products."
+         });
+       else res.status(StatusCodes.OK).json(data);
+     });
+   };
+   
+   // Find a single Product by Id
+   const findOne = (req, res) => {
+     Product.findOne(req.params.id, (err, data) => {
+       if (err) {
+         if (err.kind === "not_found") {
+           res.status(404).send({
+             message: `Not found Product with id ${req.params.id}.`
+           });
+         } else {
+           res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+             message: "Error retrieving Product with id " + req.params.id
+           });
+         }
+       } else res.status(StatusCodes.OK).json(data);
+     });
+   };
 
-const getAllProducts = async (req, res) => {
-     const products = await Product.findAll({
-         
-     })
-          
-     
-    console.log(products)
-     res.status(StatusCodes.OK).json({
-          count:products.length,
-          message: "Products fetched successfully",
-          products
-     })
-}
+   // Update a Product identified by the id in the request
+const update = (req, res) => {
+     // Validate Request
+     if (!req.body) {
+       res.status(StatusCodes.BAD_REQUEST).json({
+         message: "Content can not be empty!"
+       });
+     }
+   
+     console.log(req.body);
+   
+     Product.updateById(
+       req.params.id,
+       new Product(req.body),
+       (err, data) => {
+         if (err) {
+           if (err.kind === "not_found") {
+             res.status(StatusCodes.BAD_REQUEST).json({
+               message: `Not found Product with id ${req.params.id}.`
+             });
+           } else {
+             res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+               message: "Error updating Product with id " + req.params.id
+             });
+           }
+         } else res.status(StatusCodes.OK).json(data);
+       }
+     );
+   };
+   
+   // Delete a Product with the specified id in the request
+   const deleteProduct = (req, res) => {
+     Product.remove(req.params.id, (err, data) => {
+       if (err) {
+         if (err.kind === "not_found") {
+           res.status(404).send({
+             message: `Not found Product with id ${req.params.id}.`
+           });
+         } else {
+           res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+             message: "Could not delete Product with id " + req.params.id
+           });
+         }
+       } else res.status(StatusCodes.OK).json({ message: `Product was deleted successfully!` });
+     });
+   };
+   
+   // Delete all Product from the database.
+   const deleteAll = (req, res) => {
+     Product.removeAll((err, data) => {
+       if (err)
+         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+           message:
+             err.message || "Some error occurred while removing all product."
+         });
+       else res.status(StatusCodes.OK).json({ message: `All product were deleted successfully!` });
+     });
+   };
 
-const getOneProduct = async (req, res) => {
-     const id = req.params;
-
-     const product = await Product.findOne({
-          where : {id:id}   
-     })
-
-      if (product === null ) {
-          return res.status(StatusCodes.NOT_FOUND).json({
-               message: "Product not found"
-          });
-      }
-     res.status(StatusCodes.OK).json({
-          message: "Product fetched successfully",
-          product
-     })
-}
-
-
-const updateProduct = async (req, res) => {
-     
-     const product_name = req.body.product_name;
-     const product_line = req.body.product_line;
-     const unit_price = req.body.unit_price;
-     //const quantity = req.body.quantity;
-     const pack_price = req.body.pack_price;
-     const batchId = req.body.batchId;
-     const pack = req.body.pack;
-
-     const productId = req.params;
-
-     const product = await Product.findByIdAndUpdate(productId, {
-          product_name,
-          product_line,
-          unit_price,
-        //  quantity,
-          pack_price,
-          batchId,
-          pack
-          }, {
-              new: true
-          });
-          if (!product) {
-               return res.status(StatusCodes.NOT_FOUND).json({
-                    message: "Product not found"
-               });
-          
-
-          }
-          res.status(StatusCodes.OK).json({
-               message: "Product updated successfully",
-          })
-}
-
-const deleteProduct = async (req, res) => {
-     const productId = req.params;
-
-     const product = await Product.destroy(productId);
-      if (!product) {
-          return res.status(StatusCodes.NOT_FOUND).json({
-               message: "Product not found"
-          });
-      }
-      res.status(StatusCodes.OK).json({
-          message: "Product deleted successfully",
-      })
-}
+module.exports = {
+     create,
+     findAll,
+     findOne,
+     update,
+     deleteProduct,
+     deleteAll
+};
 
 
-module.exports =  {
-  addProduct,
-  getAllProducts,
-  getOneProduct,
-  updateProduct,
-  deleteProduct
-}
+
+

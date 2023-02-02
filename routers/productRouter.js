@@ -5,24 +5,26 @@ const router = express.Router()
 
 
 const {
-     addProduct,
-  getAllProducts,
-  getOneProduct,
-  updateProduct,
-  deleteProduct
+   create,
+   findAll,
+   findOne,
+   update,
+   deleteProduct,
+   deleteAll
  } = require('../controllers/productController')
 
 
 router
 .route('/')
-.post(addProduct)
-.get(getAllProducts)
+.post(create)
+.get(findAll)
+.delete(deleteAll)
 
 
 router
 .route('/:id')
-.get(getOneProduct)
-.put(updateProduct)
+.get(findOne)
+.put(update)
 .delete(deleteProduct);
 
 
